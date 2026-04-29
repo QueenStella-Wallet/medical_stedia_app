@@ -1,0 +1,233 @@
+/* --- CONFIGURATION GLOBALE --- */
+:root {
+    --primary-blue: #0000FF; /* Bleu pur */
+    --danger-red: #FF0000;  /* Rouge pur */
+    --success-green: #008000; /* Vert */
+    --warning-orange: #FFA500;
+    --info-cyan: #00FFFF;
+    --light-gray: #f8f9fa;
+    --dark-text: black;
+    --muted-text: gray;
+}
+
+body {
+    background-color: whitesmoke;
+    color: var(--dark-text);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* --- BARRE DE NAVIGATION --- */
+.navbar {
+    background-color: var(--primary-blue) !important;
+    padding: 1rem 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.4rem;
+}
+
+/* --- DASHBOARD (CARTES DU HAUT) --- */
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    background-color: white;
+}
+
+.bg-primary {
+    background-color: var(--primary-blue) !important;
+}
+
+/* --- SECTION DIAGRAMME GLOBAL (CHART.JS) --- */
+.chart-container {
+    position: relative;
+    margin: auto;
+    height: 250px;
+    width: 100%;
+    padding: 10px;
+}
+
+/* --- FONCTION HISTOGRAMME DÉTAILLÉ (URGENCES) --- */
+.bar-container {
+    display: flex;
+    align-items: flex-end;
+    height: 60px; 
+    gap: 10px;
+    justify-content: center;
+    margin-top: 5px;
+    padding-bottom: 5px;
+}
+
+.bar {
+    width: 22px;
+    background-color: var(--danger-red);
+    border-radius: 3px 3px 0 0;
+    position: relative;
+    transition: height 0.5s ease-in-out;
+    min-height: 2px;
+}
+
+.bar:hover {
+    background-color: #b30000;
+    cursor: pointer;
+}
+
+/* --- JAUGE IMC DANS LE TABLEAU --- */
+.imc-track {
+    width: 100%;
+    background: #e9ecef;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 5px;
+    border: 1px solid #dee2e6;
+}
+
+.progress-bar {
+    height: 100%;
+    transition: width 0.4s ease;
+}
+
+/* Couleurs spécifiques IMC & Statuts */
+.bg-info { background-color: var(--info-cyan) !important; }
+.bg-success { background-color: var(--success-green) !important; }
+.bg-warning { background-color: var(--warning-orange) !important; }
+.bg-danger { background-color: var(--danger-red) !important; }
+
+/* --- TABLEAU PRINCIPAL --- */
+.table {
+    background-color: white;
+    border-radius: 8px;
+    margin-bottom: 0;
+}
+
+.table thead {
+    background-color: var(--light-gray);
+    color: var(--dark-text);
+    font-size: 0.85rem;
+    font-weight: bold;
+}
+
+/* --- BADGES ET STATUTS --- */
+.badge {
+    padding: 8px 12px;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+/* --- SECTION RÉCENTES ACTIVITÉS --- */
+.section-title {
+    background-color: #1a1a1a;
+    color: white;
+    padding: 10px 15px;
+    font-weight: bold;
+    border-radius: 5px 5px 0 0;
+    font-size: 0.9rem;
+}
+
+/* --- FORMULAIRE ET RECHERCHE --- */
+.form-control:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 0.25rem rgba(0, 0, 255, 0.1);
+}
+
+.text-danger.fw-bold {
+    color: var(--danger-red) !important;
+}
+
+form.d-flex {
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+}
+
+/* --- ANIMATIONS ET PRÉCISION --- */
+@keyframes pulse-red {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.bar-urgent-active {
+    animation: pulse-red 2s infinite;
+}
+
+.sang-info small {
+    font-size: 0.75rem;
+    line-height: 1.2;
+    display: inline-block;
+}
+
+/* --- DIAGRAMME DE RÉPARTITION (INDICATEURS ÉLARGIS) --- */
+.dist-label { 
+    font-size: 0.75rem; 
+    font-weight: bold; 
+    text-transform: uppercase; 
+    color: var(--dark-text); 
+    margin-bottom: 4px; 
+    display: block; 
+    margin-top: 10px;
+}
+
+.progress-custom { 
+    height: 25px; 
+    border-radius: 6px; 
+    background-color: #eee; 
+    margin-bottom: 12px; 
+    border: 1px solid #ddd;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    display: flex;
+    overflow: hidden;
+}
+
+.progress-custom .progress-bar {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.2);
+}
+
+/* Couleurs personnalisées pour le diagramme */
+.bg-dark-custom { background-color: #343a40 !important; }
+.bg-secondary-custom { background-color: #6c757d !important; }
+.bg-hypo { background-color: #007bff !important; } /* Bleu pour Hypotension/Hypothermie */
+
+/* --- AJOUTS POUR L'ACTION MODIFIER (SANS MODIFICATION DU RESTE) --- */
+
+.action-link {
+    text-decoration: none;
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+    display: inline-block;
+}
+
+.action-link:hover {
+    transform: scale(1.2);
+}
+
+.btn-update {
+    background-color: var(--warning-orange) !important;
+    color: white !important;
+    border: none;
+    padding: 10px 30px;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+.btn-update:hover {
+    background-color: #e69500 !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Style optionnel pour différencier le formulaire en mode édition */
+.edit-mode-border {
+    border-top: 5px solid var(--warning-orange) !important;
+}

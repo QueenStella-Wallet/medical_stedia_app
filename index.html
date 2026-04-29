@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SANTÉ-DASHBOARD Pro | Gestion Clinique</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Styles pour l'histogramme des mini-barres */
+        .bar-container { display: flex; align-items: flex-end; height: 50px; gap: 8px; justify-content: center; margin-top: 5px; }
+        .bar { width: 18px; background: #dc3545; border-radius: 3px 3px 0 0; position: relative; transition: height 0.5s; min-height: 2px; }
+        .bar.bg-info-urgent { background: #00FFFF; }
+        .bar:hover { opacity: 0.8; }
+        /* Style pour la jauge IMC */
+        .imc-track { width: 100%; background: #e9ecef; height: 6px; border-radius: 3px; overflow: hidden; margin-top: 4px; }
+        .last-no-border { border-right: none !important; }
+        .action-link { text-decoration: none; font-size: 1.2rem; }
+    </style>
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-primary mb-4 shadow">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">🏥 GESTION CLINIQUE EXPERT</a>
+        <a href="/ajouter" class="btn btn-light btn-sm fw-bold">+ NOUVEAU DOSSIER</a>
+    </div>
+</nav>
+
+<div class="container pb-5">
+    {% if mode == "liste" %}
+        
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white p-3 shadow-sm border-0 h-100 text-center">
+                    <small class="text-uppercase fw-bold">TOTAL PATIENTS</small>
+                    <h2 class="mb-0 fw-bold">{{ stats.total_global }}</h2>
+                    <hr class="my-2" style="opacity: 0.3;">
+                    <small>Aujourd'hui : {{ patients|length }}</small>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <div class="card p-3 shadow-sm border-0 h-100">
+                    <h6 class="mb-2 fw-bold text-danger">🚨 RÉPARTITION DÉTAILLÉE DES URGENCES ({{ stats.total_urg }})</h6>
+                    <div class="row text-center g-2 align-items-end mb-3 border-bottom pb-2">
+                        {% for key, label in [('maigre','Maigre'),('surpoids','Surpoids'),('obese','Obèse'),('hypotension','Hypoten.'), ('hypertension','Hyperten.')] %}
+                        <div class="col border-end last-no-border">
+                            <div class="bar-container">
+                                {% set height = (stats[key] * 15) if stats[key] > 0 else 2 %}
+                                <div class="bar" style="height: {{ height }}px;"></div>
+                            </div>
+                            <small class="text-muted d-block" style="font-size: 0.65rem;">{{ label }}</small>
+                            <span class="fw-bold small">{{ stats[key] }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="row text-center g-2 align-items-end">
+                        {% for key, label in [('hypoglycemie','Hypogly.'), ('hyperglycemie','Hypergly.'), ('hypothermie','Hypother.'), ('hyperthermie','Fièvre'), ('ss','Profil SS')] %}
+                        <div class="col border-end last-no-border">
+                            <div class="bar-container">
+                                {% set height = (stats[key] * 15) if stats[key] > 0 else 2 %}
+                                <div class="bar" style="height: {{ height }}px; {{ 'background:#00FFFF;' if 'hypo' in key }}"></div>
+                            </div>
+                            <small class="text-muted d-block" style="font-size: 0.65rem;">{{ label }}</small>
+                            <span class="fw-bold small">{{ stats[key] }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card p-3 shadow-sm border-0">
+                    <h6 class="fw-bold text-uppercase small mb-3">📊 État Global des Patients (Histogramme)</h6>
+                    <div style="height: 250px; width: 100%;">
+                        <canvas id="chartEtatGlobal"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const ctx = document.getElementById('chartEtatGlobal').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Urgence', 'Normal', 'Total patient'],
+                        datasets: [{
+                            label: 'Nombre de Patients',
+                            data: [{{ stats.total_urg }}, {{ stats.total_norm }}, {{ stats.total_global }}],
+                            backgroundColor: [
+                                'rgba(255, 0, 0, 0.8)',
+                                'rgba(0, 128, 0, 0.8)',
+                                'rgba(0, 0, 255, 0.8)'
+                            ],
+                            borderColor: ['#FF0000', '#008000', '#0000FF'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+                        }
+                    }
+                });
+            });
+        </script>
+
+        <div class="row mb-4">
+            <div class="col-12">
+                <form action="/" method="GET" class="d-flex shadow-sm rounded overflow-hidden bg-white">
+                    <input type="text" name="q" class="form-control border-0 p-3" placeholder="Rechercher par NOM, Prénom, Groupe (A+...) ou Profil (SS...)" value="{{ query }}">
+                    <button type="submit" class="btn btn-dark px-4 rounded-0 fw-bold">FILTRER</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-uppercase small fw-bold">
+                        <tr>
+                            <th class="ps-3">PATIENT & IMC</th>
+                            <th>LIAISONS / GÉNÉTIQUE</th>
+                            <th>SANG (Don/Rec)</th>
+                            <th>OBSERVATIONS / URGENCES</th>
+                            <th class="text-end pe-4">ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in patients %}
+                        <tr>
+                            <td class="ps-3">
+                                <div class="fw-bold">{{ p.nom }} {{ p.prenom }}</div>
+                                <div class="text-muted small">{{ p.age }} ans | Profil <strong>{{ p.electro }}</strong></div>
+                                <div class="d-flex align-items-center gap-2" style="max-width: 150px;">
+                                    <small class="fw-bold" style="font-size: 0.7rem;">IMC: {{ p.imc }}</small>
+                                    <div class="imc-track flex-grow-1">
+                                        {% set imc_color = 'bg-info' if p.imc < 18.5 else ('bg-success' if p.imc < 25 else ('bg-warning' if p.imc < 30 else 'bg-danger')) %}
+                                        <div class="progress-bar {{ imc_color }}" style="width: {{ (p.imc * 2) if p.imc < 50 else 100 }}%; height: 100%;"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-1"><span class="badge bg-light text-dark border small">🕒 {{ p.date }}</span></div>
+                            </td>
+                            <td>
+                                <div class="badge bg-success w-100 mb-1" style="font-size: 0.7rem;">✅ OK : AA (Conseillé)</div>
+                                <div class="badge bg-danger w-100" style="font-size: 0.7rem;">❌ NON : AS, SS, AC (Déconseillé)</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary fs-6 mb-2">{{ p.groupe }}</span><br>
+                                <div class="sang-info small">
+                                    <span class="text-success fw-bold">➔ (Donneur) :</span> {{ p.donne_a }}<br>
+                                    <span class="text-danger fw-bold">⬅ (Récepteur) :</span> {{ p.recoit_de }}
+                                </div>
+                            </td>
+                            <td>
+                                {% if p.diagnostic == "Urgence" %}
+                                    <span class="badge bg-danger text-uppercase mb-1">Urgent</span><br>
+                                    <small class="text-danger fw-bold">{{ p.observation }}</small>
+                                {% else %}
+                                    <span class="badge bg-success text-uppercase mb-1">Normal</span><br>
+                                    <small class="text-success">Stable</small>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <a href="/modifier/{{ p.id }}" class="action-link me-2" title="Modifier">✏️</a>
+                                <a href="/supprimer/{{ p.id }}" class="action-link text-danger" onclick="return confirm('Supprimer ce dossier ?')" title="Supprimer">🗑️</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-dark text-white fw-bold py-2">📋 RÉCENTES ACTIVITÉS & PRÉCONISATIONS</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Heure</th>
+                            <th>Patient</th>
+                            <th>Prise en Charge</th>
+                            <th>Détails Urgence</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in patients|reverse %}
+                        {% if loop.index <= 5 %}
+                        <tr>
+                            <td class="ps-3">{{ p.date.split(' ')[1] if ' ' in p.date else p.date }}</td>
+                            <td><strong>{{ p.nom }}</strong></td>
+                            <td>
+                                <span class="badge {{ 'bg-danger' if p.diagnostic == 'Urgence' else 'bg-success' }}">
+                                    {{ 'OUI - Prioritaire' if p.diagnostic == 'Urgence' else 'NON - Standard' }}
+                                </span> 
+                            </td>
+                            <td class="{{ 'text-danger fw-bold' if p.diagnostic == 'Urgence' else '' }}">{{ p.observation }}</td>
+                            <td><span class="badge bg-info text-dark">Création</span></td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card p-3 shadow-sm border-0 text-center">
+            <h6 class="fw-bold text-primary text-start small mb-3">📍 ORIENTATION PATIENT : VALEURS DE RÉFÉRENCE</h6>
+            <div class="row">
+                <div class="col border-end"><small class="text-muted d-block">Température</small><strong>36.5°C — 37.5°C</strong></div>
+                <div class="col border-end"><small class="text-muted d-block">Glycémie (à jeun)</small><strong>0.70 — 1.10 g/L</strong></div>
+                <div class="col border-end"><small class="text-muted d-block">Tension Artérielle</small><strong>12 / 8</strong></div>
+                <div class="col"><small class="text-muted d-block">IMC Normal</small><strong>18.5 — 24.9</strong></div>
+            </div>
+        </div>
+
+    {% elif mode == "formulaire" %}
+        <div class="card shadow border-0 p-4 mx-auto" style="max-width: 800px;">
+            <h3 class="fw-bold text-primary mb-4">
+                {{ '📝 MODIFIER LE DOSSIER' if patient else '➕ NOUVEAU DOSSIER PATIENT' }}
+            </h3>
+            <form action="{{ url_for('modifier', id=patient.id) if patient else url_for('ajouter') }}" method="POST">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nom</label>
+                        <input type="text" name="nom" class="form-control" value="{{ patient.nom if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Prénom</label>
+                        <input type="text" name="prenom" class="form-control" value="{{ patient.prenom if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Âge</label>
+                        <input type="number" name="age" class="form-control" value="{{ patient.age if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Poids (kg)</label>
+                        <input type="number" step="0.1" name="poids" class="form-control" value="{{ patient.poids if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Taille (m)</label>
+                        <input type="number" step="0.01" name="taille" class="form-control" value="{{ patient.taille if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Température (°C)</label>
+                        <input type="number" step="0.1" name="temp" class="form-control" value="{{ patient.temp if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Glycémie (g/L)</label>
+                        <input type="number" step="0.01" name="glycemie" class="form-control" value="{{ patient.glycemie if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Tension (SYS/DIA)</label>
+                        <input type="text" name="tension" class="form-control" placeholder="12/8" value="{{ patient.tension if patient else '' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Groupe Sanguin</label>
+                        <select name="groupe" class="form-select">
+                            {% for g in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
+                            <option value="{{ g }}" {{ 'selected' if patient and patient.groupe == g else '' }}>{{ g }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Électrophorèse</label>
+                        <select name="electro" class="form-select">
+                            {% for e in ['AA', 'AS', 'SS', 'AC'] %}
+                            <option value="{{ e }}" {{ 'selected' if patient and patient.electro == e else '' }}>{{ e }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary px-5 fw-bold">
+                        {{ 'METTRE À JOUR' if patient else 'ENREGISTRER LE DOSSIER' }}
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary ms-2">Annuler</a>
+                </div>
+            </form>
+        </div>
+    {% endif %}
+</div>
+
+</body>
+</html>
